@@ -14,8 +14,12 @@ mod aes_ciy {
         pub fn set(& mut self, val: u8) {
             self.val = val;
         }
-        pub fn sub_bytes(& mut self) {
+        pub fn sub_bytes(&mut self) {
             let b = sub_bytes::sub_bytes(self.get());
+            self.set(b);
+        }
+        pub fn xor (&mut self, input: &AESByte) {
+            let b = self.get() ^ input.get();
             self.set(b);
         }
     }
@@ -46,25 +50,14 @@ mod aes_ciy {
 }
 
 use aes_ciy::AESByte;
-use std::collections::HashMap;
 
 fn main() {
     println!("AES CIY (Code It Yourself)");
 
-    let mut b = AESByte::new();
-    let mut sbox_values = HashMap::new();
-    for i in 0..256 {
-        b.set(i as u8);
-        b.sub_bytes();
-        let t = b.get();
-        let entry = sbox_values.entry(t);
-        match entry {
-            std::collections::hash_map::Entry::Occupied(_) => panic!("Error in SBox; input: 0x{:x} -> output: 0x{:x}", i, t),
-            std::collections::hash_map::Entry::Vacant(_) => entry.or_insert(true),
-        };
-
-        sbox_values.entry(t).or_insert(true);
-
-        println!("{:x} -> {:x}", i, t);
-    }
+    let mut b1 = AESByte::new();
+    let mut b2 = AESByte::new();
+    b1.set(0x0F);
+    b2.set(0xF0);
+    b1.xor(&b2);
+    println!("Xor: 0x{:x}", b1.get());
 }
