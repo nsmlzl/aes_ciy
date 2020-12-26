@@ -107,7 +107,28 @@ mod aes_ciy {
                 b.sub_bytes();
             }
         }
-        fn shift_rows() {
+        pub fn shift_rows(&mut self) {
+            // first row: shift one column left
+            let b10 = self.data[1].get();
+            self.data[1].set(self.data[5].get());
+            self.data[5].set(self.data[9].get());
+            self.data[9].set(self.data[13].get());
+            self.data[13].set(b10);
+            // second row: shift two columns left
+            let b20 = self.data[2].get();
+            let b21 = self.data[6].get();
+            self.data[2].set(self.data[10].get());
+            self.data[6].set(self.data[14].get());
+            self.data[10].set(b20);
+            self.data[14].set(b21);
+            // third row: shift three columns left
+            let b30 = self.data[3].get();
+            let b31 = self.data[7].get();
+            let b32 = self.data[11].get();
+            self.data[3].set(self.data[15].get());
+            self.data[7].set(b30);
+            self.data[11].set(b31);
+            self.data[15].set(b32);
         }
         fn mix_columns() {
         }
@@ -124,6 +145,7 @@ fn main() {
     let mut block = AESBlock::new(0x4F816B7C87A0563D0D84BDE984A33D03);
     block.add_round_key(&key);
     block.substitute_bytes();
+    block.shift_rows();
     for (i, d) in block.data.iter().enumerate() {
         println!("{}: 0x{:x}", i, d.get());
     }
