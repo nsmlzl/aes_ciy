@@ -2,6 +2,7 @@ mod aes_ciy {
     pub struct AESByte {
         val: u8,
     }
+    // TODO: needs display, copy and xor traid
     impl AESByte {
         fn new() -> AESByte {
             AESByte {
@@ -70,6 +71,7 @@ mod aes_ciy {
 
     pub struct AESKey {
         key: [AESByte; 16],
+        round: u8,
     }
     impl AESKey {
         pub fn new(key: u128) -> AESKey {
@@ -78,9 +80,50 @@ mod aes_ciy {
             for (i, kb) in bytes.iter().enumerate() {
                 key[i].set(*kb);
             }
+            let round: u8 = 0;
             AESKey {
                 key,
+                round,
             }
+        }
+        pub fn expand(&mut self) {
+            self.round += 1;
+            let tmp = AESKey::gi(&self.key[12..16], self.round);
+            for (i, b) in tmp.iter().enumerate() {
+                self.key[i].xor(b);
+            }
+            for i in 4..16 {
+                let mut t = AESByte::new();
+                t.set(self.key[i-4].get());
+                self.key[i].xor(&t);
+            }
+        }
+        fn gi(input: &[AESByte], round: u8) -> [AESByte; 4] {
+            let mut tmp = [AESByte::new(),  AESByte::new(), AESByte::new(), AESByte::new()];
+            tmp[0].set(input[1].get());
+            tmp[1].set(input[2].get());
+            tmp[2].set(input[3].get());
+            tmp[3].set(input[0].get());
+            for b in tmp.iter_mut() {
+                b.sub_bytes();
+            }
+            let mut rc = AESByte::new();
+            let u: u8 = match round {
+                1 => 0x01,
+                2 => 0x02,
+                3 => 0x04,
+                4 => 0x08,
+                5 => 0x10,
+                6 => 0x20,
+                7 => 0x40,
+                8 => 0x80,
+                9 => 0x1B,
+                10 => 0x36,
+                _ => panic!("key round out of range"),
+            };
+            rc.set(u);
+            tmp[0].xor(&rc);
+            tmp
         }
     }
     pub struct AESBlock {
@@ -130,23 +173,82 @@ mod aes_ciy {
             self.data[11].set(b31);
             self.data[15].set(b32);
         }
-        fn mix_columns() {
+        pub fn mix_columns(&mut self) {
+            AESBlock::mix_column(&mut self.data[0..4]);
+            AESBlock::mix_column(&mut self.data[4..8]);
+            AESBlock::mix_column(&mut self.data[8..12]);
+            AESBlock::mix_column(&mut self.data[12..16]);
+        }
+        fn mix_column(input: &mut [AESByte]) {
+            let i0 = input[0].get();
+            let i1 = input[1].get();
+            let i2 = input[2].get();
+            let i3 = input[3].get();
+            input[0].set(AESBlock::xtime(i0) ^ AESBlock::xtime(i1) ^ i1 ^ i2 ^i3);
+            input[1].set(i0 ^ AESBlock::xtime(i1) ^ AESBlock::xtime(i2) ^ i2 ^i3);
+            input[2].set(i0 ^ i1 ^ AESBlock::xtime(i2) ^ AESBlock::xtime(i3) ^ i3);
+            input[3].set(AESBlock::xtime(i0) ^ i0 ^ i1 ^ i2 ^ AESBlock::xtime(i3));
+        }
+        fn xtime(input: u8) -> u8 {
+            if input & 0x80 != 0x00 {
+                input << 1 ^ 0x1b
+            }
+            else {
+                input << 1
+            }
+        }
+    }
+    pub struct AES {
+        key: AESKey,
+        pub data: AESBlock,
+    }
+    impl AES {
+        pub fn new(plaintext: u128, key: u128) -> AES {
+            let key = AESKey::new(key);
+            let data = AESBlock::new(plaintext);
+            AES {
+                key,
+                data,
+            }
+        }
+        pub fn encrypt(&mut self) {
+            self.first_round();
+            for _ in 0..9 {
+                self.normal_round();
+            }
+            self.last_round();
+        }
+        fn first_round(&mut self) {
+            self.data.add_round_key(&self.key);
+        }
+        fn normal_round(&mut self) {
+            self.data.substitute_bytes();
+            self.data.shift_rows();
+            self.data.mix_columns();
+            self.key.expand();
+            self.data.add_round_key(&self.key);
+        }
+        fn last_round(&mut self) {
+            self.data.substitute_bytes();
+            self.data.shift_rows();
+            self.key.expand();
+            self.data.add_round_key(&self.key);
+
         }
     }
 }
 
-use aes_ciy::AESKey;
-use aes_ciy::AESBlock;
+use aes_ciy::AES;
 
 fn main() {
     println!("AES CIY (Code It Yourself)");
 
-    let mut key = AESKey::new(0x9D5BFF851B0B81F841E7196736524BBD);
-    let mut block = AESBlock::new(0x4F816B7C87A0563D0D84BDE984A33D03);
-    block.add_round_key(&key);
-    block.substitute_bytes();
-    block.shift_rows();
-    for (i, d) in block.data.iter().enumerate() {
+    let key: u128 = 0x9D5BFF851B0B81F841E7196736524BBD;
+    let plaintext: u128 = 0x4F816B7C87A0563D0D84BDE984A33D03;
+    let mut aes = AES::new(plaintext, key);
+    aes.encrypt();
+
+    for (i, d) in aes.data.data.iter().enumerate() {
         println!("{}: 0x{:x}", i, d.get());
     }
 }
