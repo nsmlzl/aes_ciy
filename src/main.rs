@@ -195,14 +195,17 @@ mod aes_ciy {
     pub struct AES {
         key: AESKey,
         pub data: AESBlock,
+        pub cipher: Option<u128>,
     }
     impl AES {
         pub fn new(plaintext: u128, key: u128) -> AES {
             let key = AESKey::new(key);
             let data = AESBlock::new(plaintext);
+            let cipher = None;
             AES {
                 key,
                 data,
+                cipher,
             }
         }
         pub fn encrypt(&mut self) {
@@ -211,6 +214,7 @@ mod aes_ciy {
                 self.normal_round();
             }
             self.last_round();
+            self.write_cipher();
         }
         fn first_round(&mut self) {
             self.data.add_round_key(&self.key);
@@ -229,6 +233,13 @@ mod aes_ciy {
             self.data.add_round_key(&self.key);
 
         }
+        fn write_cipher(&mut self) {
+            let mut ciph: u128 = 0x0;
+            for (i, aes_b) in self.data.data.iter().enumerate() {
+                ciph |= (aes_b.get() as u128) << (15-i)*8;
+            }
+            self.cipher = Some(ciph);
+        }
     }
 }
 
@@ -242,7 +253,12 @@ fn main() {
     let mut aes = AES::new(plaintext, key);
     aes.encrypt();
 
-    for (i, d) in aes.data.data.iter().enumerate() {
-        println!("{}: 0x{:x}", i, d.get());
-    }
+    let cipher = match aes.cipher {
+        Some(t) => t,
+        None => panic!("houston, we fucked up!"),
+    };
+    println!("Cipher: {:x}", &cipher);
+
+    const CORR_CIPH: u128 = 0xBACF80FA05DF776E90CBF0E7D13335B4;
+    assert_eq!(cipher, CORR_CIPH, "wrong cipher computed!");
 }
