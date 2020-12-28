@@ -4,7 +4,6 @@ mod aes_ciy {
         val: u8,
     }
     // TODO: traits needed:
-    // [ ] copy
     // [ ] xor
     use std::fmt;
     impl fmt::Display for AESByte {
@@ -12,31 +11,17 @@ mod aes_ciy {
             write!(f, "{}", self.val)
         }
     }
+    impl Copy for AESByte { }
+    impl Clone for AESByte {
+        fn clone(&self) -> AESByte {
+            *self
+        }
+    }
     impl AESByte {
         pub fn new() -> AESByte {
             AESByte {
                 val: 0,
             }
-        }
-        pub fn new_array() -> [AESByte; 16] {
-            [
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-                AESByte::new(),
-            ]
         }
         pub fn get(&self) -> u8 {
             self.val
@@ -85,7 +70,7 @@ mod aes_ciy {
     impl AESKey {
         pub fn new(key: u128) -> AESKey {
             let bytes = key.to_be_bytes();
-            let mut key = AESByte::new_array();
+            let mut key = [AESByte::new(); 16];
             for (i, kb) in bytes.iter().enumerate() {
                 key[i].set(*kb);
             }
@@ -141,7 +126,7 @@ mod aes_ciy {
     impl AESBlock {
         pub fn new(plaintext: u128) -> AESBlock {
             let bytes = plaintext.to_be_bytes();
-            let mut data = AESByte::new_array();
+            let mut data = [AESByte::new(); 16];
             for (i, db) in bytes.iter().enumerate() {
                 data[i].set(*db);
             }
@@ -252,14 +237,12 @@ use aes_ciy::AES;
 fn main() {
     println!("AES CIY (Code It Yourself)");
 
-    let x = aes_ciy::AESByte::new();
-    println!("aesbyte: {}", x);
-    // let key: u128 = 0x9D5BFF851B0B81F841E7196736524BBD;
-    // let plaintext: u128 = 0x4F816B7C87A0563D0D84BDE984A33D03;
-    // let mut aes = AES::new(plaintext, key);
-    // aes.encrypt();
+    let key: u128 = 0x9D5BFF851B0B81F841E7196736524BBD;
+    let plaintext: u128 = 0x4F816B7C87A0563D0D84BDE984A33D03;
+    let mut aes = AES::new(plaintext, key);
+    aes.encrypt();
 
-    // for (i, d) in aes.data.data.iter().enumerate() {
-    //     println!("{}: 0x{:x}", i, d.get());
-    // }
+    for (i, d) in aes.data.data.iter().enumerate() {
+        println!("{}: 0x{:x}", i, d.get());
+    }
 }
