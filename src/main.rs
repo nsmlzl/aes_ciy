@@ -1,10 +1,19 @@
+
 mod aes_ciy {
     pub struct AESByte {
         val: u8,
     }
-    // TODO: needs display, copy and xor traid
+    // TODO: traits needed:
+    // [ ] copy
+    // [ ] xor
+    use std::fmt;
+    impl fmt::Display for AESByte {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.val)
+        }
+    }
     impl AESByte {
-        fn new() -> AESByte {
+        pub fn new() -> AESByte {
             AESByte {
                 val: 0,
             }
@@ -243,12 +252,14 @@ use aes_ciy::AES;
 fn main() {
     println!("AES CIY (Code It Yourself)");
 
-    let key: u128 = 0x9D5BFF851B0B81F841E7196736524BBD;
-    let plaintext: u128 = 0x4F816B7C87A0563D0D84BDE984A33D03;
-    let mut aes = AES::new(plaintext, key);
-    aes.encrypt();
+    let x = aes_ciy::AESByte::new();
+    println!("aesbyte: {}", x);
+    // let key: u128 = 0x9D5BFF851B0B81F841E7196736524BBD;
+    // let plaintext: u128 = 0x4F816B7C87A0563D0D84BDE984A33D03;
+    // let mut aes = AES::new(plaintext, key);
+    // aes.encrypt();
 
-    for (i, d) in aes.data.data.iter().enumerate() {
-        println!("{}: 0x{:x}", i, d.get());
-    }
+    // for (i, d) in aes.data.data.iter().enumerate() {
+    //     println!("{}: 0x{:x}", i, d.get());
+    // }
 }
