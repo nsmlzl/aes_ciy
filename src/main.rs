@@ -1,10 +1,7 @@
-
 mod aes_ciy {
     pub struct AESByte {
         val: u8,
     }
-    // TODO: traits needed:
-    // [ ] xor
     use std::fmt;
     impl fmt::Display for AESByte {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -15,6 +12,22 @@ mod aes_ciy {
     impl Clone for AESByte {
         fn clone(&self) -> AESByte {
             *self
+        }
+    }
+    use std::ops::BitXor;
+    impl BitXor for AESByte {
+        type Output = Self;
+        fn bitxor(self, rhs: Self) -> Self::Output {
+            let mut output = AESByte::new();
+            let xor = self.val ^ rhs.val;
+            output.set(xor);
+            output
+        }
+    }
+    use std::ops::BitXorAssign;
+    impl BitXorAssign for AESByte {
+        fn bitxor_assign(&mut self, rhs: Self) {
+            self.val ^= rhs.val;
         }
     }
     impl AESByte {
@@ -31,10 +44,6 @@ mod aes_ciy {
         }
         pub fn sub_bytes(&mut self) {
             let b = sub_bytes::sub_bytes(self.get());
-            self.set(b);
-        }
-        pub fn xor (&mut self, input: &AESByte) {
-            let b = self.get() ^ input.get();
             self.set(b);
         }
     }
@@ -84,21 +93,21 @@ mod aes_ciy {
             self.round += 1;
             let tmp = AESKey::gi(&self.key[12..16], self.round);
             for (i, b) in tmp.iter().enumerate() {
-                self.key[i].xor(b);
+                self.key[i] ^= *b;
             }
             for i in 4..16 {
                 let mut t = AESByte::new();
                 t.set(self.key[i-4].get());
-                self.key[i].xor(&t);
+                self.key[i] ^= t;
             }
         }
         fn gi(input: &[AESByte], round: u8) -> [AESByte; 4] {
-            let mut tmp = [AESByte::new(),  AESByte::new(), AESByte::new(), AESByte::new()];
-            tmp[0].set(input[1].get());
-            tmp[1].set(input[2].get());
-            tmp[2].set(input[3].get());
-            tmp[3].set(input[0].get());
-            for b in tmp.iter_mut() {
+            let mut out = [AESByte::new(); 4];
+            out[0] = input[1];
+            out[1] = input[2];
+            out[2] = input[3];
+            out[3] = input[0];
+            for b in out.iter_mut() {
                 b.sub_bytes();
             }
             let mut rc = AESByte::new();
@@ -116,8 +125,8 @@ mod aes_ciy {
                 _ => panic!("key round out of range"),
             };
             rc.set(u);
-            tmp[0].xor(&rc);
-            tmp
+            out[0] ^= rc;
+            out
         }
     }
     pub struct AESBlock {
@@ -136,7 +145,7 @@ mod aes_ciy {
         }
         pub fn add_round_key(&mut self, key: &AESKey) {
             for (i, kb) in key.key.iter().enumerate() {
-                self.data[i].xor(kb);
+                self.data[i] ^= *kb;
             }
         }
         pub fn substitute_bytes(&mut self) {
@@ -261,4 +270,5 @@ fn main() {
 
     const CORR_CIPH: u128 = 0xBACF80FA05DF776E90CBF0E7D13335B4;
     assert_eq!(cipher, CORR_CIPH, "wrong cipher computed!");
+    println!("Cipher is correct!");
 }
