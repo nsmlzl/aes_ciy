@@ -96,9 +96,7 @@ mod aes_ciy {
                 self.key[i] ^= *b;
             }
             for i in 4..16 {
-                let mut t = AESByte::new();
-                t.set(self.key[i-4].get());
-                self.key[i] ^= t;
+                self.key[i] ^= self.key[i-4];
             }
         }
         fn gi(input: &[AESByte], round: u8) -> [AESByte; 4] {
@@ -155,26 +153,24 @@ mod aes_ciy {
         }
         pub fn shift_rows(&mut self) {
             // first row: shift one column left
-            let b10 = self.data[1].get();
-            self.data[1].set(self.data[5].get());
-            self.data[5].set(self.data[9].get());
-            self.data[9].set(self.data[13].get());
-            self.data[13].set(b10);
+            let b10 = self.data[1];
+            self.data[1] = self.data[5];
+            self.data[5] = self.data[9];
+            self.data[9] = self.data[13];
+            self.data[13] = b10;
             // second row: shift two columns left
-            let b20 = self.data[2].get();
-            let b21 = self.data[6].get();
-            self.data[2].set(self.data[10].get());
-            self.data[6].set(self.data[14].get());
-            self.data[10].set(b20);
-            self.data[14].set(b21);
+            let b20 = self.data[2];
+            let b21 = self.data[6];
+            self.data[2] = self.data[10];
+            self.data[6] = self.data[14];
+            self.data[10] = b20;
+            self.data[14] = b21;
             // third row: shift three columns left
-            let b30 = self.data[3].get();
-            let b31 = self.data[7].get();
-            let b32 = self.data[11].get();
-            self.data[3].set(self.data[15].get());
-            self.data[7].set(b30);
-            self.data[11].set(b31);
-            self.data[15].set(b32);
+            let b30 = self.data[3];
+            self.data[3] = self.data[15];
+            self.data[15] = self.data[11];
+            self.data[11] = self.data[7];
+            self.data[7] = b30;
         }
         pub fn mix_columns(&mut self) {
             AESBlock::mix_column(&mut self.data[0..4]);
@@ -240,7 +236,6 @@ mod aes_ciy {
             self.data.shift_rows();
             self.key.expand();
             self.data.add_round_key(&self.key);
-
         }
         fn write_cipher(&mut self) {
             let mut ciph: u128 = 0x0;
