@@ -18,9 +18,8 @@ mod aes_ciy {
     impl BitXor for AESByte {
         type Output = Self;
         fn bitxor(self, rhs: Self) -> Self::Output {
-            let mut output = AESByte::new();
             let xor = self.val ^ rhs.val;
-            output.set(xor);
+            let output = AESByte::new(xor);
             output
         }
     }
@@ -31,9 +30,9 @@ mod aes_ciy {
         }
     }
     impl AESByte {
-        pub fn new() -> AESByte {
+        pub fn new(val: u8) -> AESByte {
             AESByte {
-                val: 0,
+                val,
             }
         }
         pub fn get(&self) -> u8 {
@@ -79,7 +78,7 @@ mod aes_ciy {
     impl AESKey {
         pub fn new(key: u128) -> AESKey {
             let bytes = key.to_be_bytes();
-            let mut key = [AESByte::new(); 16];
+            let mut key = [AESByte::new(0); 16];
             for (i, kb) in bytes.iter().enumerate() {
                 key[i].set(*kb);
             }
@@ -100,7 +99,7 @@ mod aes_ciy {
             }
         }
         fn gi(input: &[AESByte], round: u8) -> [AESByte; 4] {
-            let mut out = [AESByte::new(); 4];
+            let mut out = [AESByte::new(0); 4];
             out[0] = input[1];
             out[1] = input[2];
             out[2] = input[3];
@@ -108,7 +107,6 @@ mod aes_ciy {
             for b in out.iter_mut() {
                 b.sub_bytes();
             }
-            let mut rc = AESByte::new();
             let u: u8 = match round {
                 1 => 0x01,
                 2 => 0x02,
@@ -122,18 +120,20 @@ mod aes_ciy {
                 10 => 0x36,
                 _ => panic!("key round out of range"),
             };
-            rc.set(u);
+            let rc = AESByte::new(u);
             out[0] ^= rc;
             out
         }
     }
+    // TODO: Rename AESData
+    // TODO: Same struct for AESBlock and AESKey?
     pub struct AESBlock {
         pub data: [AESByte; 16],
     }
     impl AESBlock {
         pub fn new(plaintext: u128) -> AESBlock {
             let bytes = plaintext.to_be_bytes();
-            let mut data = [AESByte::new(); 16];
+            let mut data = [AESByte::new(0); 16];
             for (i, db) in bytes.iter().enumerate() {
                 data[i].set(*db);
             }
