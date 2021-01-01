@@ -284,13 +284,9 @@ fn main() {
     let mut aes = AES::new(plaintext, key);
     aes.encrypt();
 
-    let cipher = match aes.cipher {
-        Some(t) => t,
-        None => panic!("houston, we fucked up!"),
-    };
-    println!("Cipher: {:x}", &cipher);
-
-    const CORR_CIPH: u128 = 0xBACF80FA05DF776E90CBF0E7D13335B4;
-    assert_eq!(cipher, CORR_CIPH, "wrong cipher computed!");
-    println!("Cipher is correct!");
+    if let Some(cipher) = aes.cipher {
+        println!("Cipher: {:x}", &cipher);
+    } else {
+        println!("No cipher!");
+    }
 }
