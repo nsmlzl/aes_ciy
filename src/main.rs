@@ -86,16 +86,16 @@ mod aes_ciy {
             }
         }
         pub fn expand(&mut self, round: u8) {
-            let tmp = AESKey::gi(&self.key[12..16], round);
+            let tmp = AESKey::gi_function(&self.key[12..16], round);
             for (i, b) in tmp.iter().enumerate() {
                 self.key[i] ^= *b;
             }
+            // TODO: Iterator::zip for pairing both iterators
             for i in 4..16 {
                 self.key[i] ^= self.key[i-4];
             }
         }
-        // TODO: find better method name
-        fn gi(input: &[AESByte], round: u8) -> [AESByte; 4] {
+        fn gi_function(input: &[AESByte], round: u8) -> [AESByte; 4] {
             let mut out = [AESByte::new(0); 4];
             out[0] = input[1];
             out[1] = input[2];
@@ -200,7 +200,7 @@ mod aes_ciy {
             }
         }
     }
-    // TODO: add 'round' field to AES struct
+    // TODO: clean up pub / private fields
     pub struct AES {
         key: AESKey,
         pub data: AESBlock,
