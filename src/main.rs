@@ -104,8 +104,12 @@ mod aes_ciy {
             for b in out.iter_mut() {
                 b.sub_bytes();
             }
-            // TODO: create method for rc generation
-            let u: u8 = match round {
+            let rc = AESKey::get_round_const(round);
+            out[0] ^= rc;
+            out
+        }
+        fn get_round_const(round: u8) -> AESByte {
+            let constant: u8 = match round {
                 1 => 0x01,
                 2 => 0x02,
                 3 => 0x04,
@@ -118,9 +122,7 @@ mod aes_ciy {
                 10 => 0x36,
                 _ => panic!("key round out of range"),
             };
-            let rc = AESByte::new(u);
-            out[0] ^= rc;
-            out
+            AESByte::new(constant)
         }
     }
     // TODO: Rename AESData
