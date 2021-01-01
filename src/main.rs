@@ -252,6 +252,26 @@ mod aes_ciy {
             self.cipher = Some(ciph);
         }
     }
+    #[cfg(test)]
+    mod tests {
+        #[test]
+        fn encryption_1() {
+            let key: u128 = 0x9D5BFF851B0B81F841E7196736524BBD;
+            let plaintext: u128 = 0x4F816B7C87A0563D0D84BDE984A33D03;
+            let mut aes = super::AES::new(plaintext, key);
+            aes.encrypt();
+
+            let cipher = match aes.cipher {
+                Some(t) => t,
+                None => panic!("houston, we fucked up!"),
+            };
+            println!("Cipher: {:x}", &cipher);
+
+            const CORR_CIPH: u128 = 0xBACF80FA05DF776E90CBF0E7D13335B4;
+            assert_eq!(cipher, CORR_CIPH, "wrong cipher computed!");
+            println!("Cipher is correct!");
+        }
+    }
 }
 
 use aes_ciy::AES;
