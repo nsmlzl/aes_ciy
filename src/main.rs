@@ -73,7 +73,6 @@ mod aes_ciy {
 
     pub struct AESKey {
         key: [AESByte; 16],
-        round: u8,
     }
     impl AESKey {
         pub fn new(key: u128) -> AESKey {
@@ -82,15 +81,12 @@ mod aes_ciy {
             for (i, kb) in bytes.iter().enumerate() {
                 key[i].set(*kb);
             }
-            let round: u8 = 0;
             AESKey {
                 key,
-                round,
             }
         }
-        pub fn expand(&mut self) {
-            self.round += 1;
-            let tmp = AESKey::gi(&self.key[12..16], self.round);
+        pub fn expand(&mut self, round: u8) {
+            let tmp = AESKey::gi(&self.key[12..16], round);
             for (i, b) in tmp.iter().enumerate() {
                 self.key[i] ^= *b;
             }
@@ -200,6 +196,7 @@ mod aes_ciy {
     pub struct AES {
         key: AESKey,
         pub data: AESBlock,
+        round: u8,
         pub cipher: Option<u128>,
     }
     impl AES {
@@ -207,9 +204,11 @@ mod aes_ciy {
             let key = AESKey::new(key);
             let data = AESBlock::new(plaintext);
             let cipher = None;
+            let round: u8 = 0;
             AES {
                 key,
                 data,
+                round,
                 cipher,
             }
         }
@@ -228,13 +227,15 @@ mod aes_ciy {
             self.data.substitute_bytes();
             self.data.shift_rows();
             self.data.mix_columns();
-            self.key.expand();
+            self.round += 1;
+            self.key.expand(self.round);
             self.data.add_round_key(&self.key);
         }
         fn last_round(&mut self) {
             self.data.substitute_bytes();
             self.data.shift_rows();
-            self.key.expand();
+            self.round += 1;
+            self.key.expand(self.round);
             self.data.add_round_key(&self.key);
         }
         fn write_cipher(&mut self) {
