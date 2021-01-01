@@ -94,6 +94,7 @@ mod aes_ciy {
                 self.key[i] ^= self.key[i-4];
             }
         }
+        // TODO: find better method name
         fn gi(input: &[AESByte], round: u8) -> [AESByte; 4] {
             let mut out = [AESByte::new(0); 4];
             out[0] = input[1];
@@ -103,6 +104,7 @@ mod aes_ciy {
             for b in out.iter_mut() {
                 b.sub_bytes();
             }
+            // TODO: create method for rc generation
             let u: u8 = match round {
                 1 => 0x01,
                 2 => 0x02,
@@ -137,6 +139,7 @@ mod aes_ciy {
                 data,
             }
         }
+        // TODO: define bitxor trait for AESBlock and AESKey; or use same struct
         pub fn add_round_key(&mut self, key: &AESKey) {
             for (i, kb) in key.key.iter().enumerate() {
                 self.data[i] ^= *kb;
@@ -174,6 +177,7 @@ mod aes_ciy {
             AESBlock::mix_column(&mut self.data[8..12]);
             AESBlock::mix_column(&mut self.data[12..16]);
         }
+        // TODO: do processing with AESBytes instead of u8
         fn mix_column(input: &mut [AESByte]) {
             let i0 = input[0].get();
             let i1 = input[1].get();
@@ -184,6 +188,7 @@ mod aes_ciy {
             input[2].set(i0 ^ i1 ^ AESBlock::xtime(i2) ^ AESBlock::xtime(i3) ^ i3);
             input[3].set(AESBlock::xtime(i0) ^ i0 ^ i1 ^ i2 ^ AESBlock::xtime(i3));
         }
+        // TODO: use AESByte instead of u8
         fn xtime(input: u8) -> u8 {
             if input & 0x80 != 0x00 {
                 input << 1 ^ 0x1b
@@ -193,6 +198,7 @@ mod aes_ciy {
             }
         }
     }
+    // TODO: add 'round' field to AES struct
     pub struct AES {
         key: AESKey,
         pub data: AESBlock,
