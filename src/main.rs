@@ -1,4 +1,7 @@
 mod aes_ciy {
+    // TODO: add decryption
+    // TODO: clean up pub / private fields
+    // TODO: Iterator::zip for pairing both iterators
     #[derive(PartialEq, Eq)]
     pub struct AESByte {
         val: u8,
@@ -104,7 +107,6 @@ mod aes_ciy {
             for (i, b) in tmp.iter().enumerate() {
                 self.key[i] ^= *b;
             }
-            // TODO: Iterator::zip for pairing both iterators
             for i in 4..16 {
                 self.key[i] ^= self.key[i-4];
             }
@@ -209,7 +211,6 @@ mod aes_ciy {
             }
         }
     }
-    // TODO: clean up pub / private fields
     pub struct AES {
         key: AESKey,
         pub data: AESBlock,
