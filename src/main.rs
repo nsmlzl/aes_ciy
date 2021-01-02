@@ -29,6 +29,14 @@ mod aes_ciy {
             self.val ^= rhs.val;
         }
     }
+    use std::ops::Shl;
+    impl Shl<usize> for AESByte {
+        type Output = Self;
+        fn shl(self, rhs: usize) -> Self::Output {
+            let u = self.get() << rhs;
+            AESByte::new(u)
+        }
+    }
     impl AESByte {
         pub fn new(val: u8) -> AESByte {
             AESByte {
@@ -179,24 +187,19 @@ mod aes_ciy {
             AESBlock::mix_column(&mut self.data[8..12]);
             AESBlock::mix_column(&mut self.data[12..16]);
         }
-        // TODO: do processing with AESBytes instead of u8
         fn mix_column(input: &mut [AESByte]) {
-            let i0 = input[0].get();
-            let i1 = input[1].get();
-            let i2 = input[2].get();
-            let i3 = input[3].get();
-            input[0].set(AESBlock::xtime(i0) ^ AESBlock::xtime(i1) ^ i1 ^ i2 ^i3);
-            input[1].set(i0 ^ AESBlock::xtime(i1) ^ AESBlock::xtime(i2) ^ i2 ^i3);
-            input[2].set(i0 ^ i1 ^ AESBlock::xtime(i2) ^ AESBlock::xtime(i3) ^ i3);
-            input[3].set(AESBlock::xtime(i0) ^ i0 ^ i1 ^ i2 ^ AESBlock::xtime(i3));
+            let in_cp = [input[0], input[1], input[2], input[3]];
+            input[0] = AESBlock::xtime(in_cp[0]) ^ AESBlock::xtime(in_cp[1]) ^ in_cp[1] ^ in_cp[2] ^ in_cp[3];
+            input[1] = in_cp[0] ^ AESBlock::xtime(in_cp[1]) ^ AESBlock::xtime(in_cp[2]) ^ in_cp[2] ^ in_cp[3];
+            input[2] = in_cp[0] ^ in_cp[1] ^ AESBlock::xtime(in_cp[2]) ^ AESBlock::xtime(in_cp[3]) ^ in_cp[3];
+            input[3] = AESBlock::xtime(in_cp[0]) ^ in_cp[0] ^ in_cp[1] ^ in_cp[2] ^ AESBlock::xtime(in_cp[3]);
         }
-        // TODO: use AESByte instead of u8
-        fn xtime(input: u8) -> u8 {
-            if input & 0x80 != 0x00 {
-                input << 1 ^ 0x1b
+        fn xtime(input: AESByte) -> AESByte {
+            if input.get() & 0x80 != 0x00 {
+                input.shl(1) ^ AESByte::new(0x1b)
             }
             else {
-                input << 1
+                input.shl(1)
             }
         }
     }
