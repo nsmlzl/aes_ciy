@@ -1,4 +1,5 @@
 mod aes_ciy {
+    #[derive(PartialEq, Eq)]
     pub struct AESByte {
         val: u8,
     }
@@ -6,6 +7,11 @@ mod aes_ciy {
     impl fmt::Display for AESByte {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{}", self.val)
+        }
+    }
+    impl fmt::Debug for AESByte {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "AESByte: 0x{:x}", self.val)
         }
     }
     impl Copy for AESByte { }
@@ -257,6 +263,7 @@ mod aes_ciy {
             self.cipher = Some(ciph);
         }
     }
+    // TODO: add more unit tests
     #[cfg(test)]
     mod tests {
         #[test]
@@ -275,6 +282,62 @@ mod aes_ciy {
             const CORR_CIPH: u128 = 0xBACF80FA05DF776E90CBF0E7D13335B4;
             assert_eq!(cipher, CORR_CIPH, "wrong cipher computed!");
             println!("Cipher is correct!");
+        }
+        #[test]
+        fn xtime_1() {
+            let input = super::AESByte::new(0x7F);
+            let result = super::AESBlock::xtime(input);
+            let correct = super::AESByte::new(0xFE);
+            assert_eq!(result, correct, "xtime computed wrong result; MSB not set");
+        }
+        #[test]
+        fn xtime_2() {
+            let input = super::AESByte::new(0xFF);
+            let result = super::AESBlock::xtime(input);
+            let correct = super::AESByte::new(0xE5);
+            assert_eq!(result, correct, "xtime computed wrong result; MSB set");
+        }
+        #[test]
+        fn mix_column_1() {
+            use super::AESByte;
+            use super::AESBlock;
+
+            let mut input = [
+                AESByte::new(0xdb),
+                AESByte::new(0x13),
+                AESByte::new(0x53),
+                AESByte::new(0x45),
+            ];
+            let corr = [
+                AESByte::new(0x8e),
+                AESByte::new(0x4d),
+                AESByte::new(0xa1),
+                AESByte::new(0xbc),
+            ];
+
+            AESBlock::mix_column(&mut input);
+            assert_eq!(input, corr, "mix_column computed wrong result!");
+        }
+        #[test]
+        fn mix_column_2() {
+            use super::AESByte;
+            use super::AESBlock;
+
+            let mut input = [
+                AESByte::new(0xf2),
+                AESByte::new(0x0a),
+                AESByte::new(0x22),
+                AESByte::new(0x5c),
+            ];
+            let corr = [
+                AESByte::new(0x9f),
+                AESByte::new(0xdc),
+                AESByte::new(0x58),
+                AESByte::new(0x9d),
+            ];
+
+            AESBlock::mix_column(&mut input);
+            assert_eq!(input, corr, "mix_column computed wrong result!");
         }
     }
 }
