@@ -340,6 +340,22 @@ mod aes_ciy {
             AESBlock::mix_column(&mut input);
             assert_eq!(input, corr, "mix_column computed wrong result!");
         }
+        #[test]
+        fn gi_function() {
+            let mut input = [super::AESByte::new(0); 4];
+            input[0].set(0x78);
+            input[1].set(0x56);
+            input[2].set(0x34);
+            input[3].set(0x12);
+            let ret = super::AESKey::gi_function(&input, 1);
+            let correct = [
+                super::AESByte::new(0xB0),
+                super::AESByte::new(0x18),
+                super::AESByte::new(0xC9),
+                super::AESByte::new(0xBC),
+            ];
+            assert_eq!(ret, correct, "Wrong value processed by gi_function!");
+        }
     }
 }
 
