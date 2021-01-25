@@ -356,6 +356,32 @@ mod aes_ciy {
             ];
             assert_eq!(ret, correct, "Wrong value processed by gi_function!");
         }
+        #[test]
+        fn key_expansion() {
+            let mut key = super::AESKey::new(0x9d5BFF851b0b81f841e7196736524bbd);
+            for i in 1..=10 {
+                key.expand(i);
+            }
+            let correct = [
+                super::AESByte::new(0xFC),
+                super::AESByte::new(0xB1),
+                super::AESByte::new(0x98),
+                super::AESByte::new(0xAA),
+                super::AESByte::new(0x2C),
+                super::AESByte::new(0x90),
+                super::AESByte::new(0x8E),
+                super::AESByte::new(0x48),
+                super::AESByte::new(0x7C),
+                super::AESByte::new(0x54),
+                super::AESByte::new(0x4F),
+                super::AESByte::new(0x79),
+                super::AESByte::new(0x53),
+                super::AESByte::new(0xDC),
+                super::AESByte::new(0xEA),
+                super::AESByte::new(0x78),
+            ];
+            assert_eq!(key.key, correct, "Wrong key processed!");
+        }
     }
 }
 
